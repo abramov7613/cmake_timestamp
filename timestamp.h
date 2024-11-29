@@ -7,6 +7,7 @@ extern "C" {
 
 extern const char* git_hash_str;
 extern const char* git_short_hash_str;
+extern const char* git_tag_str;
 extern const char* git_branch_str;
 extern const char* git_dirty_str;
 extern const char* build_time_str;
