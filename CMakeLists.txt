@@ -6,7 +6,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 # Compile the library that contains the global variables
-add_library( timestamp OBJECT timestamp.c)
+add_library(cmake_timestamp OBJECT timestamp.c)
 
 
 ##########################################################
@@ -22,7 +22,7 @@ add_library( timestamp OBJECT timestamp.c)
 # This variable drives the CMake auto-update scripts, so
 # this must not be commented out!
 # (TIMESTAMP is a CMake built-in command)
-string(TIMESTAMP BUILD_TIME "%d-%m-%Y %H:%M:%S")
+string(TIMESTAMP BUILD_TIME "%d-%m-%Y %H:%M:%S (UTC)" UTC)
 
 
 
@@ -62,7 +62,7 @@ endif()
 # C preprocessor define conversion.
 #
 target_compile_definitions(
-	timestamp
+	cmake_timestamp
 	PRIVATE -DBUILD_TIME="${BUILD_TIME}"
 	PRIVATE -DGIT_HASH="${GIT_HASH}"
 	PRIVATE -DGIT_SHORT_HASH="${GIT_SHORT_HASH}"
@@ -76,7 +76,7 @@ target_compile_definitions(
 # Only building of the timestamp library below this point.
 # No configuration should be necessary.
 #
-target_include_directories( timestamp
+target_include_directories( cmake_timestamp
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
@@ -92,5 +92,5 @@ add_custom_target(
 #This (I think) is the same as a PRE_BUILD custom_command. But PRE_BUILD is
 #available for VS generators only, on others it is synonymous to PRE_LINK,
 #i.e. "post compile"
-add_dependencies(timestamp clear_cache)
+add_dependencies(cmake_timestamp clear_cache)
 
