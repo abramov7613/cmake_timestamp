@@ -31,28 +31,34 @@ string(TIMESTAMP BUILD_TIME "%d-%m-%Y %H:%M:%S (UTC)" UTC)
 # First a helper function, then use it for select git data.
 find_package(Git)
 function(git_cmd optstring output)
-	# convert space separated string to CMake list, so it gets
-	# split into argvs for the git command (and not passed, spaces and all,
-	# in argv[1])
-	string(REPLACE " " ";" cmd_list ${optstring})
-	execute_process(
-	COMMAND
-		${GIT_EXECUTABLE} ${cmd_list}
-	WORKING_DIRECTORY
-		${CMAKE_SOURCE_DIR}
-	OUTPUT_VARIABLE
-		res
-	OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-	set( ${output} ${res} PARENT_SCOPE )
+  # convert space separated string to CMake list, so it gets
+  # split into argvs for the git command (and not passed, spaces and all,
+  # in argv[1])
+  string(REPLACE " " ";" cmd_list ${optstring})
+  execute_process(
+  COMMAND
+    ${GIT_EXECUTABLE} ${cmd_list}
+  WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE
+    res
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set( ${output} ${res} PARENT_SCOPE )
 endfunction()
 
 git_cmd( "show -s --format=%H" GIT_HASH)
 git_cmd( "show -s --format=%h" GIT_SHORT_HASH)
 git_cmd( "diff -w --shortstat" GIT_DIRTY)
 git_cmd( "tag --points-at ${GIT_HASH}" GIT_TAG)
+if(GIT_TAG STREQUAL "")
+  git_cmd("describe --tags --abbrev=0" GIT_TAG)
+  if(NOT GIT_TAG MATCHES ".?[0-9]+\.[0-9]+\.[0-9]+")
+    set(GIT_TAG "")
+  endif()
+endif()
 if( ${GIT_VERSION_STRING} VERSION_GREATER_EQUAL 2.22 )
-	git_cmd( "branch --show-current" GIT_BRANCH)
+  git_cmd( "branch --show-current" GIT_BRANCH)
 endif()
 
 
@@ -62,14 +68,14 @@ endif()
 # C preprocessor define conversion.
 #
 target_compile_definitions(
-	cmake_timestamp
-	PRIVATE -DBUILD_TIME="${BUILD_TIME}"
-	PRIVATE -DGIT_HASH="${GIT_HASH}"
-	PRIVATE -DGIT_SHORT_HASH="${GIT_SHORT_HASH}"
-	PRIVATE -DGIT_BRANCH="${GIT_BRANCH}"
-	PRIVATE -DGIT_DIRTY="${GIT_DIRTY}"
-	PRIVATE -DGIT_TAG="${GIT_TAG}"
-	PRIVATE -DCPACK_VERSION="${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}"
+  cmake_timestamp
+  PRIVATE -DBUILD_TIME="${BUILD_TIME}"
+  PRIVATE -DGIT_HASH="${GIT_HASH}"
+  PRIVATE -DGIT_SHORT_HASH="${GIT_SHORT_HASH}"
+  PRIVATE -DGIT_BRANCH="${GIT_BRANCH}"
+  PRIVATE -DGIT_DIRTY="${GIT_DIRTY}"
+  PRIVATE -DGIT_TAG="${GIT_TAG}"
+  PRIVATE -DCPACK_VERSION="${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}"
 )
 
 ##########################################################
@@ -77,15 +83,15 @@ target_compile_definitions(
 # No configuration should be necessary.
 #
 target_include_directories( cmake_timestamp
-	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 #Add a dummy target that removes the CMake variable BUILD_TIME from CMake's cache.
 #this forces CMake to be-rerun when we hit this target.
 add_custom_target(
-	clear_cache
-	COMMAND ${CMAKE_COMMAND} -U BUILD_TIME ${CMAKE_BINARY_DIR}
+  clear_cache
+  COMMAND ${CMAKE_COMMAND} -U BUILD_TIME ${CMAKE_BINARY_DIR}
 )
 
 #Have the cache clearing be run before trying to build the timestamp library.
